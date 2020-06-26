@@ -15,14 +15,14 @@ weatherbit.startWeatherMonitoring()
 basic.forever(function () {
     _namespace = 1634558569
     instance = seq * 1073741824
-    if (seq < 2) {
+    if (seq < 2) {//seqが0,1の時
         temp = weatherbit.temperature() / 100
         humid = weatherbit.humidity() / 1024
         press = weatherbit.pressure() / 25600
         instance = instance + (Math.trunc(press) - 400) * 1048576
         instance = instance + Math.trunc(humid * 10) * 1024
         instance = instance + Math.trunc(temp * 10)
-    } else {
+    } else {//sqlが2,3の時
         風向 = pins.analogReadPin(AnalogPin.P1)
         if (風向 <= 447) {
             windd = 0
@@ -58,10 +58,10 @@ basic.forever(function () {
             }
         }
     }
-    if (seq == 2) {
+    if (seq < 3) {// seq=0,1,2は雨判定
         water = weatherbit.soilMoisture()
         instance = instance + Math.trunc(water) * 524288
-    } else {
+    } else {//seq=3は雨量計
         rain = weatherbit.rain()
         if (rain > old_rain) {
             old_rain = rain
@@ -75,20 +75,14 @@ basic.forever(function () {
     wind = weatherbit.windSpeed()
     instance = instance + Math.trunc(windd) * 1024
     instance = instance + Math.trunc(wind * 10)
-    bluetooth.advertiseUid(
-    _namespace,
-    instance,
-    7,
-    false
-    )
+    bluetooth.advertiseUid(_namespace,instance,7, false)
     seq += 1
-    if (seq > 3) {
+    if (seq > 3) {//seqによって雨判定と雨量計の送信切換え seq=4はなし0,1,2,3
         seq = 0
     }
     basic.pause(5000)
     bluetooth.stopAdvertising()
-    basic.pause(5000)
-    if (input.runningTime() > 86400000) {
+    if (input.runningTime() > 86400000) { //毎日リセット
         control.reset()
     }
 })
